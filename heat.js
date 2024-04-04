@@ -7,9 +7,24 @@ document.addEventListener('DOMContentLoaded', () => {
     .then((data) => {
       //Extract data into Variables
       const year = data.monthlyVariance.map((d) => d.year);
-      const month = data.monthlyVariance.map((d) => d.month);
-      const variance = data.monthlyVariance.map((d) => d.variance);
+      const yearDomain = d3.extent(year);
 
+      const month = data.monthlyVariance.map((d) => d.month);
+      const monthDomain = d3.extent(month);
+
+      const variance = data.monthlyVariance.map((d) => d.variance);
+      const varianceDomain = d3.extent(variance);
+
+      console.log('Year Domain: ', yearDomain);
+      console.log('Month Domain: ', monthDomain);
+      console.log('Variance Domain: ', varianceDomain);
+
+      //SVG Variables
+      const h = 1000;
+      const w = 500;
+      const strokeColor = 'black';
+
+      //Set colors for heat map
       let colorsArray = [
         {
           varianceThreshold: 1,
@@ -52,23 +67,33 @@ document.addEventListener('DOMContentLoaded', () => {
       const svg = d3
         .select('body')
         .append('svg')
-        .attr('width', 500)
-        .attr('height', 200);
-
-      const rectWidth = 50;
-      const rectHeight = 20;
-      const rectPadding = 5;
+        .attr('width', h)
+        .attr('height', w);
 
       svg
-        .selectAll('rect')
+        .append('rect')
+        .attr('class', 'background')
+        .attr('width', '100%')
+        .attr('height', '100%')
+        .attr('fill', ' #E5E2E0')
+        .attr('stroke', strokeColor);
+
+      //Legend
+      const rectWidth = 50;
+      const rectHeight = 20;
+      const rectPadding = 0;
+
+      svg
+        .selectAll('.colorLegend')
         .data(colorsArray)
         .enter()
         .append('rect')
         .attr('class', 'colorLegend')
         .attr('x', (d, i) => i * (rectWidth + rectPadding))
-        .attr('y', 50)
+        .attr('y', w - 50)
         .attr('width', rectWidth)
         .attr('height', rectHeight)
+        .attr('stroke', strokeColor)
         .style('fill', (d) => d.color);
     });
 });
