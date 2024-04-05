@@ -7,7 +7,7 @@ document.addEventListener('DOMContentLoaded', () => {
     .then((data) => {
       //Extract data into Variables
       const year = data.monthlyVariance.map((d) => d.year);
-      const yearDomain = d3.extent(year);
+      const yearDomain = d3.extent(year).reverse();
 
       const month = data.monthlyVariance.map((d) => d.month);
       const monthDomain = d3.extent(month);
@@ -34,42 +34,61 @@ document.addEventListener('DOMContentLoaded', () => {
       //Set colors for heat map
       let colorsArray = [
         {
-          varianceThreshold: 1,
+          minTemp: 0,
+          maxTemp: 3.81,
           color: '#076469',
         },
         {
-          varianceThreshold: 2,
+          minTemp: 3.82,
+          maxTemp: 5.01,
           color: '#179399',
         },
         {
-          varianceThreshold: 3,
+          minTemp: 5.02,
+          maxTemp: 6.11,
           color: '#58b9c7',
         },
         {
-          varianceThreshold: 4,
+          minTemp: 6.12,
+          maxTemp: 7.21,
           color: '#afe5ed',
         },
         {
-          varianceThreshold: 5,
+          minTemp: 7.22,
+          maxTemp: 8.41,
           color: '#f0df81',
         },
         {
-          varianceThreshold: 6,
+          minTemp: 8.42,
+          maxTemp: 9.51,
           color: '#f2b957',
         },
         {
-          varianceThreshold: 7,
+          minTemp: 9.52,
+          maxTemp: 10.61,
           color: '#eb8723',
         },
         {
-          varianceThreshold: 8,
+          minTemp: 10.62,
+          maxTemp: 11.81,
           color: '#fa5534',
         },
         {
-          varianceThreshold: 9,
+          minTemp: 11.82,
+          maxTemp: 14,
           color: '#fc2828',
         },
       ];
+
+      //Functions for binding Colors with Variance
+      function colorFunc(variance) {
+        let actualTemp = baseTemp + variance;
+        actualTemp = actualTemp.toFixed(1);
+        const colorObj = colorsArray.find(
+          (color) => actualTemp >= color.minTemp && actualTemp < color.maxTemp
+        );
+        return colorObj ? colorObj.color : '#ffffff';
+      }
 
       const svg = d3
         .select('body')
@@ -85,12 +104,10 @@ document.addEventListener('DOMContentLoaded', () => {
         .attr('fill', ' #E5E2E0')
         .attr('stroke', strokeColor);
 
-      //Create Heat Map rectangles
-
       //add scale
       xScale = d3
         .scaleLinear()
-        .domain(yearDomain.reverse())
+        .domain(yearDomain)
         .range([w - 100, 50]);
 
       yScale = d3
@@ -115,6 +132,20 @@ document.addEventListener('DOMContentLoaded', () => {
       // Call the axis functions
       xAxisContainer.call(xAxis);
       yAxisContainer.call(yAxis);
+
+      //Add rectangles
+      rectContainer = svg.append('g').attr('class', 'heatRect');
+      // Join data to rectangles
+      const heatRect = rectContainer
+        .selectAll('.heatRect') // Select all rectangles in the container
+        .data(data.monthlyVariance) // Bind data to rectangles
+        .enter() // Enter selection
+        .append('rect') // Append rectangle for each data point
+        .attr('x', (d) => xScale(d.year)) // Set x position using the xScale
+        .attr('y', (d) => yScale(d.month)) // Set y position using the yScale
+        .attr('width', 4)
+        .attr('height', 20)
+        .style('fill', (d) => colorFunc(d.variance));
 
       //add tooltips
 
