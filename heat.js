@@ -85,13 +85,46 @@ document.addEventListener('DOMContentLoaded', () => {
         .attr('fill', ' #E5E2E0')
         .attr('stroke', strokeColor);
 
+      //Create Heat Map rectangles
+
+      //add scale
+      xScale = d3
+        .scaleLinear()
+        .domain(yearDomain.reverse())
+        .range([w - 100, 50]);
+
+      yScale = d3
+        .scaleLinear()
+        .domain(monthDomain)
+        .range([50, h - 100]);
+
+      //add axes
+      xAxis = d3.axisBottom(xScale).tickFormat(d3.format('d'));
+      yAxis = d3.axisLeft(yScale).tickFormat(d3.format('d'));
+
+      // Append Axis Containers to SVG
+      const xAxisContainer = svg
+        .append('g')
+        .attr('class', 'x-axis')
+        .attr('transform', `translate(0, ${h - 100})`);
+      const yAxisContainer = svg
+        .append('g')
+        .attr('class', 'y-axis')
+        .attr('transform', `translate(50, 0)`);
+
+      // Call the axis functions
+      xAxisContainer.call(xAxis);
+      yAxisContainer.call(yAxis);
+
+      //add tooltips
+
       //Legend
       const rectWidth = 50;
       const rectHeight = 20;
       const rectPadding = 0;
 
       // Calculate the number of ticks to add between each value in legendDomain
-      const numTicksBetween = 8; // Adjust as needed
+      const numTicksBetween = 8;
 
       let extendedTicks = legendDomain.flatMap((d, i, arr) => {
         if (i < arr.length - 1) {
@@ -103,7 +136,6 @@ document.addEventListener('DOMContentLoaded', () => {
         return d;
       });
 
-      // Add a blank tick before and after
       extendedTicks = [
         legendDomain[0] - 1,
         ...extendedTicks,
@@ -116,7 +148,7 @@ document.addEventListener('DOMContentLoaded', () => {
         .domain([
           legendDomain[0] - 1,
           legendDomain[legendDomain.length - 1] + 1,
-        ]) // Include the blank ticks
+        ])
         .range([0, colorsArray.length * (rectWidth + rectPadding) + 88]);
 
       const legendXAxis = d3
@@ -128,13 +160,13 @@ document.addEventListener('DOMContentLoaded', () => {
       const legendGroup = svg
         .append('g')
         .attr('class', 'legend-group')
-        .attr('transform', `translate(20, ${h - 50})`); // Adjust the y-position as needed
+        .attr('transform', `translate(20, ${h - 50})`);
 
       // Append legend axis
       const legendAxisGroup = legendGroup
         .append('g')
         .attr('class', 'legend-axis')
-        .attr('transform', `translate(-1, 20)`); // Adjust the y-position of the axis within the group
+        .attr('transform', `translate(-1, 20)`);
 
       legendAxisGroup.call(legendXAxis);
 
@@ -145,7 +177,7 @@ document.addEventListener('DOMContentLoaded', () => {
         .enter()
         .append('rect')
         .attr('class', 'colorLegend')
-        .attr('x', (d, i) => (i + 1) * (rectWidth + rectPadding) - 6) // Start from the second tick
+        .attr('x', (d, i) => (i + 1) * (rectWidth + rectPadding) - 6)
         .attr('width', rectWidth)
         .attr('height', rectHeight)
         .attr('stroke', strokeColor)
