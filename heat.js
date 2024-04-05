@@ -5,6 +5,7 @@ document.addEventListener('DOMContentLoaded', () => {
   fetch(URL)
     .then((response) => response.json())
     .then((data) => {
+      console.log(data);
       //Extract data into Variables
       const year = data.monthlyVariance.map((d) => d.year);
       const yearDomain = d3.extent(year).reverse();
@@ -27,8 +28,8 @@ document.addEventListener('DOMContentLoaded', () => {
       console.log('Variance Domain: ', varianceDomain);
 
       //SVG Variables
-      const h = 500;
-      const w = 1000;
+      const h = 800;
+      const w = 1800;
       const strokeColor = 'black';
 
       //Set colors for heat map
@@ -101,23 +102,24 @@ document.addEventListener('DOMContentLoaded', () => {
         .attr('class', 'background')
         .attr('width', '100%')
         .attr('height', '100%')
-        .attr('fill', ' #E5E2E0')
+        .attr('fill', '#E5E2E0')
         .attr('stroke', strokeColor);
 
       //add scale
-      xScale = d3
+      const xScale = d3
         .scaleLinear()
         .domain(yearDomain)
         .range([w - 100, 50]);
 
-      yScale = d3
+      const yScale = d3
         .scaleLinear()
         .domain(monthDomain)
         .range([50, h - 100]);
 
       //add axes
-      xAxis = d3.axisBottom(xScale).tickFormat(d3.format('d'));
-      yAxis = d3.axisLeft(yScale).tickFormat(d3.format('d'));
+      const xAxis = d3.axisBottom(xScale).tickFormat(d3.format('d'));
+
+      const yAxis = d3.axisLeft(yScale).tickFormat(d3.format('d'));
 
       // Append Axis Containers to SVG
       const xAxisContainer = svg
@@ -130,8 +132,8 @@ document.addEventListener('DOMContentLoaded', () => {
         .attr('transform', `translate(50, 0)`);
 
       // Call the axis functions
-      xAxisContainer.call(xAxis);
-      yAxisContainer.call(yAxis);
+      xAxisContainer.attr('id', 'x-axis').call(xAxis);
+      yAxisContainer.attr('id', 'y-axis').call(yAxis);
 
       //Add rectangles
       rectContainer = svg.append('g').attr('class', 'heatRect');
@@ -141,10 +143,14 @@ document.addEventListener('DOMContentLoaded', () => {
         .data(data.monthlyVariance) // Bind data to rectangles
         .enter() // Enter selection
         .append('rect') // Append rectangle for each data point
+        .attr('class', 'cell')
         .attr('x', (d) => xScale(d.year)) // Set x position using the xScale
         .attr('y', (d) => yScale(d.month)) // Set y position using the yScale
         .attr('width', 4)
-        .attr('height', 20)
+        .attr('height', 32)
+        .attr('data-year', (d) => d.year) // Set data-year attribute
+        .attr('data-month', (d) => d.month % 12) // Set data-month attribute
+        .attr('data-temp', (d) => d.variance) // Set data-temp attribute
         .style('fill', (d) => colorFunc(d.variance));
 
       //add tooltips
@@ -191,7 +197,8 @@ document.addEventListener('DOMContentLoaded', () => {
       const legendGroup = svg
         .append('g')
         .attr('class', 'legend-group')
-        .attr('transform', `translate(20, ${h - 50})`);
+        .attr('transform', `translate(20, ${h - 50})`)
+        .attr('id', 'legend');
 
       // Append legend axis
       const legendAxisGroup = legendGroup
@@ -213,5 +220,25 @@ document.addEventListener('DOMContentLoaded', () => {
         .attr('height', rectHeight)
         .attr('stroke', strokeColor)
         .style('fill', (d) => d.color);
+
+      //Add Titles
+      svg
+        .append('text')
+        .attr('id', 'title')
+        .attr('x', w / 2)
+        .attr('y', 30)
+        .style('text-anchor', 'middle')
+        .style('font-size', '30px')
+        .text('Monthly Global Land-Surface Temperature');
+
+      //Subtitle
+      svg
+        .append('text')
+        .attr('id', 'description')
+        .attr('x', w / 2)
+        .attr('y', 60)
+        .attr('text-anchor', 'middle')
+        .style('font-size', '20px')
+        .text('1753 - 2015: base temperature 8.66℃');
     });
 });
