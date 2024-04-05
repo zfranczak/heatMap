@@ -15,13 +15,20 @@ document.addEventListener('DOMContentLoaded', () => {
       const variance = data.monthlyVariance.map((d) => d.variance);
       const varianceDomain = d3.extent(variance);
 
+      const baseTemp = data.baseTemperature;
+      const legendDomain = [
+        parseFloat((varianceDomain[0] + baseTemp).toFixed(1)) + 1,
+        parseFloat((varianceDomain[1] + baseTemp).toFixed(1)) - 1,
+      ];
+
+      console.log('Base Temperature: ', legendDomain);
       console.log('Year Domain: ', yearDomain);
       console.log('Month Domain: ', monthDomain);
       console.log('Variance Domain: ', varianceDomain);
 
       //SVG Variables
-      const h = 1000;
-      const w = 500;
+      const h = 500;
+      const w = 1000;
       const strokeColor = 'black';
 
       //Set colors for heat map
@@ -67,8 +74,8 @@ document.addEventListener('DOMContentLoaded', () => {
       const svg = d3
         .select('body')
         .append('svg')
-        .attr('width', h)
-        .attr('height', w);
+        .attr('width', w)
+        .attr('height', h);
 
       svg
         .append('rect')
@@ -83,14 +90,62 @@ document.addEventListener('DOMContentLoaded', () => {
       const rectHeight = 20;
       const rectPadding = 0;
 
-      svg
+      // Calculate the number of ticks to add between each value in legendDomain
+      const numTicksBetween = 8; // Adjust as needed
+
+      let extendedTicks = legendDomain.flatMap((d, i, arr) => {
+        if (i < arr.length - 1) {
+          const interval = (arr[i + 1] - d) / (numTicksBetween + 1);
+          return d3
+            .range(0, numTicksBetween + 1)
+            .map((tick) => d + tick * interval);
+        }
+        return d;
+      });
+
+      // Add a blank tick before and after
+      extendedTicks = [
+        legendDomain[0] - 1,
+        ...extendedTicks,
+        legendDomain[legendDomain.length - 1] + 1,
+      ];
+
+      // Create legend scale with extended ticks
+      const legendXScale = d3
+        .scaleLinear()
+        .domain([
+          legendDomain[0] - 1,
+          legendDomain[legendDomain.length - 1] + 1,
+        ]) // Include the blank ticks
+        .range([0, colorsArray.length * (rectWidth + rectPadding) + 88]);
+
+      const legendXAxis = d3
+        .axisBottom(legendXScale)
+        .tickValues(extendedTicks) // Use extended ticks
+        .tickFormat(d3.format('.1f')); // Format ticks to one decimal place
+
+      // Append legend axis and rectangles as a group
+      const legendGroup = svg
+        .append('g')
+        .attr('class', 'legend-group')
+        .attr('transform', `translate(20, ${h - 50})`); // Adjust the y-position as needed
+
+      // Append legend axis
+      const legendAxisGroup = legendGroup
+        .append('g')
+        .attr('class', 'legend-axis')
+        .attr('transform', `translate(-1, 20)`); // Adjust the y-position of the axis within the group
+
+      legendAxisGroup.call(legendXAxis);
+
+      // Append legend rectangles
+      const legendRects = legendGroup
         .selectAll('.colorLegend')
         .data(colorsArray)
         .enter()
         .append('rect')
         .attr('class', 'colorLegend')
-        .attr('x', (d, i) => i * (rectWidth + rectPadding))
-        .attr('y', w - 50)
+        .attr('x', (d, i) => (i + 1) * (rectWidth + rectPadding) - 6) // Start from the second tick
         .attr('width', rectWidth)
         .attr('height', rectHeight)
         .attr('stroke', strokeColor)
