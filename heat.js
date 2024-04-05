@@ -10,6 +10,9 @@ document.addEventListener('DOMContentLoaded', () => {
       const year = data.monthlyVariance.map((d) => d.year);
       const yearDomain = d3.extent(year).reverse();
 
+      data.monthlyVariance.forEach((d) => {
+        d.month -= 1;
+      });
       const month = data.monthlyVariance.map((d) => d.month);
       const monthDomain = d3.extent(month);
 
@@ -81,6 +84,22 @@ document.addEventListener('DOMContentLoaded', () => {
         },
       ];
 
+      //Months
+      const monthArray = [
+        'January',
+        'February',
+        'March',
+        'April',
+        'May',
+        'June',
+        'July',
+        'August',
+        'September',
+        'October',
+        'November',
+        'December',
+      ];
+
       //Functions for binding Colors with Variance
       function colorFunc(variance) {
         let actualTemp = baseTemp + variance;
@@ -113,23 +132,38 @@ document.addEventListener('DOMContentLoaded', () => {
 
       const yScale = d3
         .scaleLinear()
-        .domain(monthDomain)
-        .range([50, h - 100]);
+        .domain([-0.5, 11.5])
+        .range([100, h - 100]);
+
+      // Define custom tick values for each month
+      const customTickValues = Array.from(Array(12).keys());
 
       //add axes
       const xAxis = d3.axisBottom(xScale).tickFormat(d3.format('d'));
 
-      const yAxis = d3.axisLeft(yScale).tickFormat(d3.format('d'));
+      const yAxis = d3
+        .axisLeft()
+        .scale(yScale)
+        .tickValues(customTickValues)
+        .tickFormat((month) => monthArray[month])
+        .tickSize(10, 1);
+
+      const tooltip = d3
+        .select('body')
+        .append('div')
+        .attr('class', 'tooltip')
+        .attr('id', 'tooltip')
+        .style('opacity', 0);
 
       // Append Axis Containers to SVG
       const xAxisContainer = svg
         .append('g')
         .attr('class', 'x-axis')
-        .attr('transform', `translate(0, ${h - 100})`);
+        .attr('transform', `translate(21, ${h - 100})`);
       const yAxisContainer = svg
         .append('g')
         .attr('class', 'y-axis')
-        .attr('transform', `translate(50, 0)`);
+        .attr('transform', `translate(70, 0)`);
 
       // Call the axis functions
       xAxisContainer.attr('id', 'x-axis').call(xAxis);
@@ -144,12 +178,12 @@ document.addEventListener('DOMContentLoaded', () => {
         .enter() // Enter selection
         .append('rect') // Append rectangle for each data point
         .attr('class', 'cell')
-        .attr('x', (d) => xScale(d.year)) // Set x position using the xScale
-        .attr('y', (d) => yScale(d.month)) // Set y position using the yScale
+        .attr('x', (d) => xScale(d.year) + 21) // Set x position using the xScale
+        .attr('y', (d) => yScale(d.month) - 25) // Set y position using the yScale
         .attr('width', 4)
-        .attr('height', 32)
+        .attr('height', 50)
         .attr('data-year', (d) => d.year) // Set data-year attribute
-        .attr('data-month', (d) => d.month % 12) // Set data-month attribute
+        .attr('data-month', (d) => d.month) // Set data-month attribute
         .attr('data-temp', (d) => d.variance) // Set data-temp attribute
         .style('fill', (d) => colorFunc(d.variance));
 
@@ -240,5 +274,22 @@ document.addEventListener('DOMContentLoaded', () => {
         .attr('text-anchor', 'middle')
         .style('font-size', '20px')
         .text('1753 - 2015: base temperature 8.66℃');
+
+      // Attach event listeners to the rectangles to show/hide the tooltip
+      heatRect
+        .on('mouseover', (event, d) => {
+          const tooltipContent = `${d.year} - ${
+            monthArray[d.month]
+          } <br> Variance: ${d.variance}`;
+          tooltip.transition().duration(200).style('opacity', 0.9);
+          tooltip
+            .html(tooltipContent)
+            .attr('data-year', d.year)
+            .style('left', event.pageX + 10 + 'px')
+            .style('top', event.pageY - 28 + 'px');
+        })
+        .on('mouseout', () => {
+          tooltip.transition().duration(500).style('opacity', 0);
+        });
     });
 });
