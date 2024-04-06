@@ -8,7 +8,7 @@ document.addEventListener('DOMContentLoaded', () => {
       console.log(data);
       //Extract data into Variables
       const year = data.monthlyVariance.map((d) => d.year);
-      const yearDomain = d3.extent(year).reverse();
+      const yearDomain = d3.extent(year);
 
       data.monthlyVariance.forEach((d) => {
         d.month -= 1;
@@ -128,7 +128,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const xScale = d3
         .scaleLinear()
         .domain(yearDomain)
-        .range([w - 100, 50]);
+        .range([50, w - 100]);
 
       const yScale = d3
         .scaleLinear()
@@ -139,7 +139,10 @@ document.addEventListener('DOMContentLoaded', () => {
       const customTickValues = Array.from(Array(12).keys());
 
       //add axes
-      const xAxis = d3.axisBottom(xScale).tickFormat(d3.format('d'));
+      const xAxis = d3
+        .axisBottom(xScale)
+        .tickFormat(d3.format('d'))
+        .tickSize(10, 1);
 
       const yAxis = d3
         .axisLeft()
@@ -278,15 +281,20 @@ document.addEventListener('DOMContentLoaded', () => {
       // Attach event listeners to the rectangles to show/hide the tooltip
       heatRect
         .on('mouseover', (event, d) => {
+          const actualTemp = parseFloat((baseTemp + d.variance).toFixed(1));
           const tooltipContent = `${d.year} - ${
             monthArray[d.month]
-          } <br> Variance: ${d.variance}`;
+          } <br> Temp Change: ${actualTemp}°C <br> Variance: ${d.variance.toFixed(
+            1
+          )}°C`;
+          const cellColor = colorFunc(d.variance);
           tooltip.transition().duration(200).style('opacity', 0.9);
           tooltip
             .html(tooltipContent)
             .attr('data-year', d.year)
             .style('left', event.pageX + 10 + 'px')
-            .style('top', event.pageY - 28 + 'px');
+            .style('top', event.pageY - 28 + 'px')
+            .style('border-color', cellColor); // Set background color of the tooltip
         })
         .on('mouseout', () => {
           tooltip.transition().duration(500).style('opacity', 0);
